@@ -17,24 +17,12 @@
       "repo": "https://huggingface.co/google/gemma-3n-E4B"
     },
     {
-      "name": "llama-3.1-8b",
-      "repo": "https://huggingface.co/meta-llama/Llama-3.1-8B"
-    },
-    {
       "name": "llama-3.1-8b-instruct",
       "repo": "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct"
     },
     {
-      "name": "llama-3.2-1b",
-      "repo": "https://huggingface.co/meta-llama/Llama-3.2-1B"
-    },
-    {
       "name": "llama-3.2-1b-instruct",
       "repo": "https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct"
-    },
-    {
-      "name": "llama-3.2-3b",
-      "repo": "https://huggingface.co/meta-llama/Llama-3.2-3B"
     },
     {
       "name": "llama-3.2-3b-instruct",
