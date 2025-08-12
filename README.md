@@ -13,7 +13,7 @@ Use a pre-built model container as an init container:
 ```yaml
 initContainers:
 - name: model-loader
-  image: ghcr.io/YOUR_ORG/bit-harbor:gemma-3-2b
+  image: ghcr.io/doublewordai/bit-harbor:gemma-3-2b
   volumeMounts:
   - name: models
     mountPath: /shared
@@ -24,15 +24,18 @@ Your main container can then access the models from the shared volume.
 
 ## Building Models
 
+**Automatic builds:**
+
+- Push to main → builds missing models
+- Manual trigger → optionally force rebuild all
+
+**Manual builds:**
+
 ```bash
-# Build only missing models (smart default)
-./build.sh
-
-# Force rebuild all models
-CHECK_EXISTING=false ./build.sh
-
-# Build and push to registry
-PUSH=true ./build.sh
+# Build specific model locally
+docker buildx build -t ghcr.io/doublewordai/bit-harbor:gemma-3-2b \
+  --build-arg MODEL_REPO=https://huggingface.co/google/gemma-3-2b \
+  --build-arg MODEL_NAME=gemma-3-2b .
 ```
 
 ## Available Models

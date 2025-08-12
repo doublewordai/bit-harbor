@@ -6,7 +6,6 @@ on:
     paths:
       - "models.json"
       - "Dockerfile"
-      - "build.sh"
       - ".github/workflows/build-models.yaml"
   workflow_dispatch:
     inputs:
@@ -21,17 +20,17 @@ env:
   NAMESPACE: ${{ github.repository }}
 
 jobs:
-  build:
+  discover:
     runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.check-models.outputs.models }}
+      has-models: ${{ steps.check-models.outputs.has-models }}
     permissions:
       contents: read
-      packages: write
-
+      packages: read
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Install dependencies
         run: |
@@ -45,29 +44,126 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build missing model containers
+      - name: Check which models need building
+        id: check-models
         run: |
-          chmod +x build.sh
+          echo "🔍 Discovering models that need building..."
+          
+          # Read all models from models.json
+          ALL_MODELS=$(cat models.json | jq -c '.models[]')
+          MODELS_TO_BUILD=()
+          
+          # Check which models need building
+          while IFS= read -r model_data; do
+            model_name=$(echo "$model_data" | jq -r '.name')
+            model_repo=$(echo "$model_data" | jq -r '.repo')
+            
+            image_tag="${{ env.REGISTRY }}/${{ env.NAMESPACE }}:$model_name"
+            
+            # Force rebuild or check existing
+            if [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
+              echo "🔄 Force rebuild: Will build $model_name"
+              MODELS_TO_BUILD+=("$model_data")
+            else
+              echo -n "🔍 Checking if $model_name exists... "
+              if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
+                echo "✓ exists, skipping"
+              else
+                echo "✗ not found, will build"
+                MODELS_TO_BUILD+=("$model_data")
+              fi
+            fi
+          done <<< "$ALL_MODELS"
+          
+          # Create JSON array for matrix
+          if [ ${#MODELS_TO_BUILD[@]} -eq 0 ]; then
+            echo "🎉 No models need building"
+            echo "models=[]" >> $GITHUB_OUTPUT
+            echo "has-models=false" >> $GITHUB_OUTPUT
+          else
+            echo "🏗️  Found ${#MODELS_TO_BUILD[@]} models to build"
+            # Convert bash array to JSON array
+            models_json="["
+            for i in "${!MODELS_TO_BUILD[@]}"; do
+              if [ $i -gt 0 ]; then
+                models_json+=","
+              fi
+              models_json+="${MODELS_TO_BUILD[$i]}"
+            done
+            models_json+="]"
+            
+            echo "models=$models_json" >> $GITHUB_OUTPUT
+            echo "has-models=true" >> $GITHUB_OUTPUT
+          fi
 
-          export REGISTRY="${{ env.REGISTRY }}"
-          export NAMESPACE="${{ env.NAMESPACE }}"
-          export HF_TOKEN="${{ secrets.HF_TOKEN }}"
+  build:
+    needs: discover
+    if: needs.discover.outputs.has-models == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJson(needs.discover.outputs.models) }}
+        
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push model
+        run: |
+          MODEL_NAME="${{ matrix.model.name }}"
+          MODEL_REPO="${{ matrix.model.repo }}"
+          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.NAMESPACE }}:$MODEL_NAME"
+          
+          echo "🏗️  Building $MODEL_NAME..."
+          echo "📦 From repo: $MODEL_REPO"
+          echo "🏷️  Image tag: $IMAGE_TAG"
+          
+          # Build args
+          BUILD_ARGS=(
+            "build"
+            "-f" "Dockerfile"
+            "-t" "$IMAGE_TAG"
+            "--build-arg" "MODEL_REPO=$MODEL_REPO"
+            "--build-arg" "MODEL_NAME=$MODEL_NAME"
+            "--platform" "linux/amd64,linux/arm64"
+            "--cache-from" "type=gha,scope=$MODEL_NAME"
+            "--cache-to" "type=gha,mode=max,scope=$MODEL_NAME"
+          )
+          
+          # Add HF token if provided
+          if [ -n "${{ secrets.HF_TOKEN }}" ]; then
+            BUILD_ARGS+=("--build-arg" "HF_TOKEN=${{ secrets.HF_TOKEN }}")
+          fi
           
           # Only push on main branch commits and manual dispatch
           if [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            export PUSH="true"
-            echo "🚀 Will build and push containers"
+            BUILD_ARGS+=("--push")
+            echo "🚀 Will push to registry"
           else
-            export PUSH="false"
-            echo "🔨 Will build containers without pushing"
+            echo "🔨 Building without push"
           fi
-
-          if [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
-            export CHECK_EXISTING="false"
-            echo "🔄 Force rebuild enabled - will rebuild all models"
+          
+          BUILD_ARGS+=(".")
+          
+          echo "Executing: docker buildx ${BUILD_ARGS[*]}"
+          
+          if docker buildx "${BUILD_ARGS[@]}"; then
+            echo "✅ Successfully built $MODEL_NAME"
           else
-            export CHECK_EXISTING="true" 
-            echo "🔍 Smart build enabled - will check for existing images"
+            echo "❌ Failed to build $MODEL_NAME"
+            exit 1
           fi
-
-          ./build.sh
