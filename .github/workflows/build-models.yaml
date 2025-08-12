@@ -130,11 +130,9 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+          push: true
           tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}:${{ matrix.model.name }}
           build-args: |
             MODEL_REPO=${{ matrix.model.repo }}
             MODEL_NAME=${{ matrix.model.name }}
             HF_TOKEN=${{ secrets.HF_TOKEN }}
-          cache-from: type=gha,scope=${{ matrix.model.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.model.name }}
