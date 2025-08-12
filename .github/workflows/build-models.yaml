@@ -138,3 +138,6 @@ jobs:
             HF_TOKEN=${{ secrets.HF_TOKEN }}
           cache-from: type=gha,scope=${{ matrix.model.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.model.name }}
+          opt: |
+            builder.memory=32g
+            builder.cpu=16
