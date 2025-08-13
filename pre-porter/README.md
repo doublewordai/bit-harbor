@@ -1,6 +1,6 @@
 # Pre-Porter Helm Chart
 
-Pre-Porter is a Helm chart that pre-pulls bit-harbor images on Kubernetes nodes using DaemonSets. This dramatically speeds up ML workload startup times by ensuring model images are already available locally on each node.
+Pre-Porter is a Helm chart that pre-pulls bit-harbor images on Kubernetes nodes using DaemonSets. Each DaemonSet runs the bit-harbor image with the built-in `/pause` binary, causing the container runtime to cache the image locally. This dramatically speeds up ML workload startup times by eliminating image pull time.
 
 ## Quick Start
 
@@ -149,8 +149,8 @@ kubectl rollout restart daemonset pre-porter-gemma-3-4b-it
 # Check DaemonSet status
 kubectl get daemonsets -l app.kubernetes.io/instance=pre-porter
 
-# View image pull logs
-kubectl logs -l app.kubernetes.io/instance=pre-porter -c image-puller
+# View model cache container logs  
+kubectl logs -l app.kubernetes.io/instance=pre-porter -c model-cache
 
 # Check which nodes have images
 kubectl get pods -l app.kubernetes.io/instance=pre-porter -o wide

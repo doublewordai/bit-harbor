@@ -17,10 +17,10 @@ tests:
           path: metadata.name
           value: RELEASE-NAME-pre-porter-test-image
       - equal:
-          path: spec.template.spec.initContainers[0].image
+          path: spec.template.spec.containers[0].image
           value: "ghcr.io/doublewordai/bit-harbor:test-image"
       - equal:
-          path: spec.template.spec.initContainers[0].imagePullPolicy
+          path: spec.template.spec.containers[0].imagePullPolicy
           value: "Always"
       - equal:
           path: metadata.labels["pre-porter.io/image"]
@@ -160,16 +160,16 @@ tests:
           enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.initContainers[0].resources.limits.cpu
+          path: spec.template.spec.containers[0].resources.limits.cpu
           value: "200m"
       - equal:
-          path: spec.template.spec.initContainers[0].resources.limits.memory
+          path: spec.template.spec.containers[0].resources.limits.memory
           value: "256Mi"
       - equal:
-          path: spec.template.spec.initContainers[0].resources.requests.cpu
+          path: spec.template.spec.containers[0].resources.requests.cpu
           value: "100m"
       - equal:
-          path: spec.template.spec.initContainers[0].resources.requests.memory
+          path: spec.template.spec.containers[0].resources.requests.memory
           value: "128Mi"
   - it: should override global resources with image-specific resources
     set:
@@ -192,16 +192,16 @@ tests:
               memory: "512Mi"
     asserts:
       - equal:
-          path: spec.template.spec.initContainers[0].resources.limits.cpu
+          path: spec.template.spec.containers[0].resources.limits.cpu
           value: "500m"
       - equal:
-          path: spec.template.spec.initContainers[0].resources.limits.memory
+          path: spec.template.spec.containers[0].resources.limits.memory
           value: "1Gi"
       - equal:
-          path: spec.template.spec.initContainers[0].resources.requests.cpu
+          path: spec.template.spec.containers[0].resources.requests.cpu
           value: "250m"
       - equal:
-          path: spec.template.spec.initContainers[0].resources.requests.memory
+          path: spec.template.spec.containers[0].resources.requests.memory
           value: "512Mi"
   - it: should apply common annotations to daemonset
     set:
@@ -237,7 +237,7 @@ tests:
           enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.initContainers[0].image
+          path: spec.template.spec.containers[0].image
           value: "custom.registry.com/my-org:test-image"
   - it: should include restart annotation for pod updates
     set:
@@ -247,7 +247,7 @@ tests:
     asserts:
       - isNotEmpty:
           path: spec.template.metadata.annotations["kubectl.kubernetes.io/restartedAt"]
-  - it: should create pause container with minimal resources
+  - it: should create model cache container with pause command
     set:
       images:
         - name: "test-image"
@@ -255,13 +255,10 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
-          value: "pause"
+          value: "model-cache"
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "registry.k8s.io/pause:3.9"
+          value: "ghcr.io/doublewordai/bit-harbor:test-image"
       - equal:
-          path: spec.template.spec.containers[0].resources.limits.cpu
-          value: "10m"
-      - equal:
-          path: spec.template.spec.containers[0].resources.limits.memory
-          value: "32Mi"
+          path: spec.template.spec.containers[0].command[0]
+          value: "/pause"

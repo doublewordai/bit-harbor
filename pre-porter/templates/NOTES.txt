@@ -11,9 +11,9 @@
 
    kubectl get daemonsets -l app.kubernetes.io/instance={{ .Release.Name }}
 
-4. To view the logs of image pulling:
+4. To view the logs of model cache containers:
 
-   kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -c image-puller
+   kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -c model-cache
 
 5. To check which nodes have successfully pulled images:
 
@@ -34,7 +34,6 @@
    
    images:
      - name: "gemma-3-4b-it"
-       tag: "latest"
        enabled: true
        nodeSelector:
          node-type: "gpu"

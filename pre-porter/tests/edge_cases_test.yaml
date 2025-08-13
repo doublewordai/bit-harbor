@@ -93,14 +93,14 @@ tests:
           enabled: true
     asserts:
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: NODE_NAME
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: POD_NAME
             valueFrom:
@@ -168,8 +168,8 @@ tests:
           path: spec.template.spec.securityContext.runAsUser
           value: 1001
       - equal:
-          path: spec.template.spec.initContainers[0].securityContext.allowPrivilegeEscalation
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
           value: false
       - equal:
-          path: spec.template.spec.initContainers[0].securityContext.readOnlyRootFilesystem
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
           value: true
