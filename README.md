@@ -39,6 +39,24 @@ volumes:
 
 Your main container can then access the models from the shared-models volume.
 
+## Pre-Porter Helm Chart
+
+For production deployments, use the **Pre-Porter Helm chart** to automatically pre-pull bit-harbor images on all your cluster nodes using DaemonSets:
+
+```bash
+# Install the chart
+helm install pre-porter oci://ghcr.io/doublewordai/bit-harbor/pre-porter
+
+# Configure which images to pre-pull
+helm upgrade pre-porter oci://ghcr.io/doublewordai/bit-harbor/pre-porter \
+  --set-json 'images=[
+    {"name":"gemma-3-4b-it","enabled":true,"nodeSelector":{"gpu":"nvidia"}},
+    {"name":"llama-3.1-8b-instruct","enabled":true}
+  ]'
+```
+
+See [`./pre-porter/README.md`](./pre-porter/README.md) for detailed usage instructions.
+
 ## Building Models
 
 **Automatic builds:**
