@@ -81,7 +81,7 @@ daemonSet:
   hostNetwork: false
 
   # Restart policy for DaemonSet pods
-  restartPolicy: Always
+  restartPolicy: OnFailure
 
 # Additional labels to apply to all resources
 commonLabels: {}
