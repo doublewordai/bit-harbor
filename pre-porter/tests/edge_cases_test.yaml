@@ -1,0 +1,175 @@
+suite: test edge cases and integration
+templates:
+  - daemonset.yaml
+tests:
+  - it: should handle empty images array
+    set:
+      images: []
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should handle mixed enabled and disabled images
+    set:
+      images:
+        - name: "enabled-one"
+          tag: "latest"
+          enabled: true
+        - name: "disabled-one"
+          tag: "latest"
+          enabled: false
+        - name: "enabled-two"
+          tag: "v1.0"
+          enabled: true
+        - name: "disabled-two"
+          tag: "latest"
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should handle complex affinity rules
+    set:
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: "gpu-type"
+                    operator: "In"
+                    values: ["nvidia-a100", "nvidia-v100"]
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: "gpu-type"
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator
+          value: "In"
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values
+          content: "nvidia-a100"
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values
+          content: "nvidia-v100"
+
+  - it: should handle image names with special characters
+    set:
+      images:
+        - name: "image-with-dashes"
+          tag: "v1.0.0"
+          enabled: true
+        - name: "image_with_underscores"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should create unique daemonset names for each image
+    set:
+      images:
+        - name: "alpha"
+          tag: "latest"
+          enabled: true
+        - name: "beta"
+          tag: "latest"
+          enabled: true
+        - name: "gamma"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 3
+
+  - it: should use correct environment variables in containers
+    set:
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: IMAGE_NAME
+            value: "test-image"
+
+  - it: should handle empty global settings gracefully
+    set:
+      globalNodeSelector: {}
+      globalTolerations: []
+      globalAffinity: {}
+      globalResources: {}
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: DaemonSet
+
+  - it: should apply update strategy correctly
+    set:
+      daemonSet:
+        updateStrategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 2
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.updateStrategy.type
+          value: RollingUpdate
+      - equal:
+          path: spec.updateStrategy.rollingUpdate.maxUnavailable
+          value: 2
+
+  - it: should handle security contexts
+    set:
+      daemonSet:
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1001
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.readOnlyRootFilesystem
+          value: true

@@ -1,0 +1,52 @@
+1. Pre-Porter has been deployed to pre-pull bit-harbor images on your cluster nodes.
+
+2. The following DaemonSets have been created for enabled images:
+{{- range $image := .Values.images }}
+{{- if $image.enabled }}
+   - {{ include "pre-porter.fullname" $ }}-{{ $image.name }}
+{{- end }}
+{{- end }}
+
+3. To check the status of image pre-pulling DaemonSets:
+
+   kubectl get daemonsets -l app.kubernetes.io/instance={{ .Release.Name }}
+
+4. To view the logs of image pulling:
+
+   kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -c image-puller
+
+5. To check which nodes have successfully pulled images:
+
+   kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -o wide
+
+6. To refresh/re-pull all images, restart the DaemonSets:
+
+   kubectl rollout restart daemonset -l app.kubernetes.io/instance={{ .Release.Name }}
+
+7. To enable/disable specific images, update your values.yaml and run:
+
+   helm upgrade {{ .Release.Name }} pre-porter -f your-values.yaml
+
+8. Example values.yaml configuration:
+
+   ```yaml
+   imageRegistry: "ghcr.io/doublewordai/bit-harbor"
+   
+   images:
+     - name: "gemma-3-4b-it"
+       tag: "latest"
+       enabled: true
+       nodeSelector:
+         node-type: "gpu"
+       tolerations:
+         - key: "gpu"
+           operator: "Equal"
+           value: "true"
+           effect: "NoSchedule"
+   ```
+
+9. To monitor image pre-pulling across your cluster:
+
+   kubectl get pods -l app.kubernetes.io/component=image-prepuller --field-selector=status.phase=Running
+
+For more information, visit: https://github.com/doublewordai/bit-harbor

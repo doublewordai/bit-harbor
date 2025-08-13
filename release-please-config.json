@@ -1,0 +1,9 @@
+{
+  "packages": {
+    "pre-porter": {
+      "release-type": "helm",
+      "package-name": "pre-porter",
+      "include-component-in-tag": false
+    }
+  }
+}

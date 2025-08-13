@@ -1,0 +1,140 @@
+{{- range $image := .Values.images }}
+{{- if $image.enabled }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "pre-porter.fullname" $ }}-{{ $image.name }}
+  labels:
+    {{- include "pre-porter.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: image-prepuller
+    pre-porter.io/image: {{ $image.name | quote }}
+  {{- with $.Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "pre-porter.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: image-prepuller
+      pre-porter.io/image: {{ $image.name | quote }}
+  updateStrategy:
+    {{- toYaml $.Values.daemonSet.updateStrategy | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pre-porter.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: image-prepuller
+        pre-porter.io/image: {{ $image.name | quote }}
+        {{- with $.Values.commonLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        # Force pod restart when DaemonSet is updated
+        kubectl.kubernetes.io/restartedAt: {{ now | quote }}
+        {{- with $.Values.commonAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "pre-porter.serviceAccountName" $ }}
+      {{- include "pre-porter.imagePullSecrets" $ | nindent 6 }}
+      {{- with $.Values.daemonSet.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.daemonSet.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      dnsPolicy: {{ $.Values.daemonSet.dnsPolicy }}
+      hostNetwork: {{ $.Values.daemonSet.hostNetwork }}
+      restartPolicy: {{ $.Values.daemonSet.restartPolicy }}
+      {{- $nodeSelector := $.Values.globalNodeSelector }}
+      {{- if $image.nodeSelector }}
+      {{- $nodeSelector = $image.nodeSelector }}
+      {{- end }}
+      {{- with $nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $tolerations := $.Values.globalTolerations }}
+      {{- if $image.tolerations }}
+      {{- $tolerations = $image.tolerations }}
+      {{- end }}
+      {{- with $tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $affinity := $.Values.globalAffinity }}
+      {{- if $image.affinity }}
+      {{- $affinity = $image.affinity }}
+      {{- end }}
+      {{- with $affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: image-puller
+          image: "{{ $.Values.imageRegistry }}/{{ $image.name }}:{{ $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy }}
+          {{- with $.Values.daemonSet.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Successfully pulled image: {{ $.Values.imageRegistry }}/{{ $image.name }}:{{ $image.tag }}"
+              echo "Image pull completed at: $(date)"
+              echo "Node: ${NODE_NAME:-$(hostname)}"
+              echo "Pod: ${POD_NAME:-$(hostname)}"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          {{- $resources := $.Values.globalResources }}
+          {{- if $image.resources }}
+          {{- $resources = $image.resources }}
+          {{- end }}
+          {{- with $resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      containers:
+        - name: pause
+          image: "registry.k8s.io/pause:3.9"
+          imagePullPolicy: IfNotPresent
+          {{- with $.Values.daemonSet.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            limits:
+              cpu: "10m"
+              memory: "32Mi"
+            requests:
+              cpu: "5m"
+              memory: "16Mi"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: IMAGE_NAME
+              value: "{{ $image.name }}"
+{{- end }}
+{{- end }}

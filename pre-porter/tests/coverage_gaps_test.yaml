@@ -1,0 +1,143 @@
+suite: test coverage gaps and edge cases
+templates:
+  - daemonset.yaml
+tests:
+  - it: should apply common labels to pod template
+    set:
+      commonLabels:
+        "team": "ml-ops"
+        "environment": "production"
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: "ml-ops"
+      - equal:
+          path: spec.template.metadata.labels.environment
+          value: "production"
+
+  - it: should apply image pull secrets
+    set:
+      imagePullSecrets: ["my-secret", "another-secret"]
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: "my-secret"
+      - equal:
+          path: spec.template.spec.imagePullSecrets[1].name
+          value: "another-secret"
+
+  - it: should use nameOverride in daemonset name
+    set:
+      nameOverride: "custom-name"
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "RELEASE-NAME-custom-name-test-image"
+
+  - it: should use fullnameOverride in daemonset name
+    set:
+      fullnameOverride: "completely-custom"
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "completely-custom-test-image"
+
+  - it: should apply priority class name
+    set:
+      daemonSet:
+        priorityClassName: "high-priority"
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: "high-priority"
+
+  - it: should handle chart version in labels
+    set:
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - matchRegex:
+          path: metadata.labels["helm.sh/chart"]
+          pattern: "pre-porter-.*"
+
+  - it: should handle app version in labels when set
+    set:
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels["app.kubernetes.io/version"]
+
+  - it: should include managed-by label
+    set:
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: "Helm"
+
+  - it: should handle hostNetwork setting
+    set:
+      daemonSet:
+        hostNetwork: true
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true
+
+  - it: should handle dnsPolicy setting
+    set:
+      daemonSet:
+        dnsPolicy: "ClusterFirstWithHostNet"
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.dnsPolicy
+          value: "ClusterFirstWithHostNet"
+
+  - it: should handle restartPolicy setting
+    set:
+      daemonSet:
+        restartPolicy: "Never"
+      images:
+        - name: "test-image"
+          tag: "latest"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: "Never"

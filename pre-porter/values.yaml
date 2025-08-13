@@ -1,0 +1,90 @@
+# Default values for pre-porter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global image registry configuration
+imageRegistry: "ghcr.io/doublewordai/bit-harbor"
+
+# List of images to pre-pull. Each entry can have its own DaemonSet configuration.
+images: []
+  # - name: "gemma-3-4b-it"
+  #   tag: "latest"
+  #   pullPolicy: "Always"
+  #   enabled: true
+  #   # Node selector for this specific image
+  #   nodeSelector: {}
+  #   # Tolerations for this specific image
+  #   tolerations: []
+  #   # Affinity for this specific image
+  #   affinity: {}
+  #   # Resources for this specific image's containers
+  #   resources:
+  #     limits:
+  #       cpu: "100m"
+  #       memory: "128Mi"
+  #     requests:
+  #       cpu: "50m"
+  #       memory: "64Mi"
+
+# Global node selector applied to all DaemonSets (unless overridden per image)
+globalNodeSelector: {}
+
+# Global tolerations applied to all DaemonSets (unless overridden per image)
+globalTolerations: []
+
+# Global affinity applied to all DaemonSets (unless overridden per image)
+globalAffinity: {}
+
+# Global resource limits and requests (unless overridden per image)
+globalResources: {}
+  # limits:
+  #   cpu: "100m"
+  #   memory: "128Mi"
+  # requests:
+  #   cpu: "50m"
+  #   memory: "64Mi"
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# DaemonSet configuration
+daemonSet:
+  # Update strategy for DaemonSets
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  # Security context for DaemonSet pods
+  securityContext: {}
+
+  # Container security context
+  containerSecurityContext: {}
+
+  # Priority class name for DaemonSet pods
+  priorityClassName: ""
+
+  # DNS policy for DaemonSet pods
+  dnsPolicy: ClusterFirst
+
+  # Host network for DaemonSet pods (set to true if needed for node-level operations)
+  hostNetwork: false
+
+  # Restart policy for DaemonSet pods
+  restartPolicy: Always
+
+# Additional labels to apply to all resources
+commonLabels: {}
+
+# Additional annotations to apply to all resources
+commonAnnotations: {}
