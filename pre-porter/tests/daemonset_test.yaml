@@ -6,7 +6,6 @@ tests:
     set:
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
           pullPolicy: "Always"
     asserts:
@@ -19,7 +18,7 @@ tests:
           value: RELEASE-NAME-pre-porter-test-image
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "ghcr.io/doublewordai/bit-harbor/test-image:latest"
+          value: "ghcr.io/doublewordai/bit-harbor:test-image"
       - equal:
           path: spec.template.spec.initContainers[0].imagePullPolicy
           value: "Always"
@@ -32,46 +31,37 @@ tests:
       - equal:
           path: spec.template.metadata.labels["pre-porter.io/image"]
           value: "test-image"
-
   - it: should create multiple daemonsets for multiple enabled images
     set:
       images:
         - name: "image-one"
-          tag: "v1.0"
           enabled: true
           pullPolicy: "Always"
         - name: "image-two"
-          tag: "v2.0"
           enabled: true
           pullPolicy: "IfNotPresent"
     asserts:
       - hasDocuments:
           count: 2
-
   - it: should not create daemonset when image is disabled
     set:
       images:
         - name: "disabled-image"
-          tag: "latest"
           enabled: false
           pullPolicy: "Always"
     asserts:
       - hasDocuments:
           count: 0
-
   - it: should not create any daemonsets when no images are enabled
     set:
       images:
         - name: "image-one"
-          tag: "latest"
           enabled: false
         - name: "image-two"
-          tag: "latest"
           enabled: false
     asserts:
       - hasDocuments:
           count: 0
-
   - it: should apply global node selector when no image-specific selector
     set:
       globalNodeSelector:
@@ -79,7 +69,6 @@ tests:
         zone: "us-west"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - equal:
@@ -88,7 +77,6 @@ tests:
       - equal:
           path: spec.template.spec.nodeSelector.zone
           value: "us-west"
-
   - it: should override global node selector with image-specific selector
     set:
       globalNodeSelector:
@@ -96,7 +84,6 @@ tests:
         zone: "us-west"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
           nodeSelector:
             gpu: "amd"
@@ -110,7 +97,6 @@ tests:
           value: "high"
       - isNull:
           path: spec.template.spec.nodeSelector.zone
-
   - it: should apply global tolerations when no image-specific tolerations
     set:
       globalTolerations:
@@ -120,7 +106,6 @@ tests:
           effect: "NoSchedule"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - equal:
@@ -135,7 +120,6 @@ tests:
       - equal:
           path: spec.template.spec.tolerations[0].effect
           value: "NoSchedule"
-
   - it: should override global tolerations with image-specific tolerations
     set:
       globalTolerations:
@@ -145,7 +129,6 @@ tests:
           effect: "NoSchedule"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
           tolerations:
             - key: "memory"
@@ -163,7 +146,6 @@ tests:
           value: "PreferNoSchedule"
       - isNull:
           path: spec.template.spec.tolerations[0].value
-
   - it: should apply global resources when no image-specific resources
     set:
       globalResources:
@@ -175,7 +157,6 @@ tests:
           memory: "128Mi"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - equal:
@@ -190,7 +171,6 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].resources.requests.memory
           value: "128Mi"
-
   - it: should override global resources with image-specific resources
     set:
       globalResources:
@@ -202,7 +182,6 @@ tests:
           memory: "128Mi"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
           resources:
             limits:
@@ -224,7 +203,6 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].resources.requests.memory
           value: "512Mi"
-
   - it: should apply common annotations to daemonset
     set:
       commonAnnotations:
@@ -232,7 +210,6 @@ tests:
         "team": "ml-ops"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - equal:
@@ -241,47 +218,39 @@ tests:
       - equal:
           path: metadata.annotations.team
           value: "ml-ops"
-
   - it: should apply common annotations to pod template
     set:
       commonAnnotations:
         "example.com/managed-by": "pre-porter"
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - equal:
           path: spec.template.metadata.annotations["example.com/managed-by"]
           value: "pre-porter"
-
   - it: should use custom image registry
     set:
       imageRegistry: "custom.registry.com/my-org"
       images:
         - name: "test-image"
-          tag: "v1.0"
           enabled: true
     asserts:
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "custom.registry.com/my-org/test-image:v1.0"
-
+          value: "custom.registry.com/my-org:test-image"
   - it: should include restart annotation for pod updates
     set:
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - isNotEmpty:
           path: spec.template.metadata.annotations["kubectl.kubernetes.io/restartedAt"]
-
   - it: should create pause container with minimal resources
     set:
       images:
         - name: "test-image"
-          tag: "latest"
           enabled: true
     asserts:
       - equal:

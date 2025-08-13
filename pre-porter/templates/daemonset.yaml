@@ -75,7 +75,7 @@ spec:
       {{- end }}
       initContainers:
         - name: image-puller
-          image: "{{ $.Values.imageRegistry }}/{{ $image.name }}:{{ $image.tag }}"
+          image: "{{ $.Values.imageRegistry }}:{{ $image.name }}"
           imagePullPolicy: {{ $image.pullPolicy }}
           {{- with $.Values.daemonSet.containerSecurityContext }}
           securityContext:
@@ -85,7 +85,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              echo "Successfully pulled image: {{ $.Values.imageRegistry }}/{{ $image.name }}:{{ $image.tag }}"
+              echo "Successfully pulled image: {{ $.Values.imageRegistry }}:{{ $image.name }}"
               echo "Image pull completed at: $(date)"
               echo "Node: ${NODE_NAME:-$(hostname)}"
               echo "Pod: ${POD_NAME:-$(hostname)}"

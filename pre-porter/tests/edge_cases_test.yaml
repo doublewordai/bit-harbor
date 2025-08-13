@@ -13,16 +13,16 @@ tests:
     set:
       images:
         - name: "enabled-one"
-          tag: "latest"
+          
           enabled: true
         - name: "disabled-one"
-          tag: "latest"
+          
           enabled: false
         - name: "enabled-two"
-          tag: "v1.0"
+          
           enabled: true
         - name: "disabled-two"
-          tag: "latest"
+          
           enabled: false
     asserts:
       - hasDocuments:
@@ -32,7 +32,7 @@ tests:
     set:
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
           affinity:
             nodeAffinity:
@@ -60,10 +60,10 @@ tests:
     set:
       images:
         - name: "image-with-dashes"
-          tag: "v1.0.0"
+          
           enabled: true
         - name: "image_with_underscores"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - hasDocuments:
@@ -73,13 +73,13 @@ tests:
     set:
       images:
         - name: "alpha"
-          tag: "latest"
+          
           enabled: true
         - name: "beta"
-          tag: "latest"
+          
           enabled: true
         - name: "gamma"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - hasDocuments:
@@ -89,7 +89,7 @@ tests:
     set:
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - contains:
@@ -120,7 +120,7 @@ tests:
       globalResources: {}
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - hasDocuments:
@@ -137,7 +137,7 @@ tests:
             maxUnavailable: 2
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -158,7 +158,7 @@ tests:
           readOnlyRootFilesystem: true
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:

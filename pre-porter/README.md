@@ -20,21 +20,20 @@ Create a `values.yaml` file:
 # Global image registry
 imageRegistry: "ghcr.io/doublewordai/bit-harbor"
 
-# Configure which images to pre-pull
+# Configure which model tags to pre-pull
+# Each model name becomes the image tag: ghcr.io/doublewordai/bit-harbor:<model-name>
 images:
-  - name: "gemma-3-4b-it"
-    tag: "latest"
+  - name: "gemma-3-4b-it"  # Pulls ghcr.io/doublewordai/bit-harbor:gemma-3-4b-it
     enabled: true
     pullPolicy: "Always"
     
-  - name: "llama-3.1-8b-instruct"
-    tag: "latest"
+  - name: "llama-3.1-8b-instruct"  # Pulls ghcr.io/doublewordai/bit-harbor:llama-3.1-8b-instruct
     enabled: true
     pullPolicy: "Always"
     
-  - name: "qwen-3-8b"
-    tag: "latest" 
-    enabled: false  # Disabled - won't create DaemonSet
+  - name: "qwen-3-8b"  # Disabled - won't create DaemonSet
+    enabled: false
+    pullPolicy: "Always"
 ```
 
 It creates a DaemonSet for each enabled image, pulling the specified model from the registry and keeping it cached on each node.
@@ -71,7 +70,6 @@ globalResources:
 images:
   # Large GPU models - only on GPU nodes
   - name: "llama-3.1-8b-instruct"
-    tag: "latest"
     enabled: true
     nodeSelector:
       accelerator: "nvidia-tesla-v100"
@@ -88,7 +86,6 @@ images:
 
   # Small CPU models - on CPU-optimized nodes  
   - name: "gemma-3-4b-it"
-    tag: "latest"
     enabled: true
     nodeSelector:
       node-type: "cpu-optimized"
@@ -100,7 +97,6 @@ images:
 
   # Embedding models - on all nodes
   - name: "qwen-3-embedding-8b"
-    tag: "latest"
     enabled: true
     # Uses globalNodeSelector and globalTolerations
 ```

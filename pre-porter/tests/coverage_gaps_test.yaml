@@ -9,7 +9,7 @@ tests:
         "environment": "production"
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -24,7 +24,7 @@ tests:
       imagePullSecrets: ["my-secret", "another-secret"]
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -39,7 +39,7 @@ tests:
       nameOverride: "custom-name"
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -51,7 +51,7 @@ tests:
       fullnameOverride: "completely-custom"
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -64,7 +64,7 @@ tests:
         priorityClassName: "high-priority"
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -75,7 +75,7 @@ tests:
     set:
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - matchRegex:
@@ -86,7 +86,7 @@ tests:
     set:
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - isNotEmpty:
@@ -96,7 +96,7 @@ tests:
     set:
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -109,7 +109,7 @@ tests:
         hostNetwork: true
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -122,7 +122,7 @@ tests:
         dnsPolicy: "ClusterFirstWithHostNet"
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:
@@ -135,7 +135,7 @@ tests:
         restartPolicy: "Never"
       images:
         - name: "test-image"
-          tag: "latest"
+          
           enabled: true
     asserts:
       - equal:

@@ -5,10 +5,10 @@
 # Global image registry configuration
 imageRegistry: "ghcr.io/doublewordai/bit-harbor"
 
-# List of images to pre-pull. Each entry can have its own DaemonSet configuration.
+# List of model tags to pre-pull. Each entry can have its own DaemonSet configuration.
+# The model name becomes the image tag: ghcr.io/doublewordai/bit-harbor:<model-name>
 images: []
-  # - name: "gemma-3-4b-it"
-  #   tag: "latest"
+  # - name: "gemma-3-4b-it"  # This becomes the image tag
   #   pullPolicy: "Always"
   #   enabled: true
   #   # Node selector for this specific image
