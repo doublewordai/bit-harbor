@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/doublewordai/bit-harbor/compare/v0.2.0...v0.2.1) (2025-08-13)
+
+
+### Bug Fixes
+
+* bug with using model name in path of image rather than tag ([0e16558](https://github.com/doublewordai/bit-harbor/commit/0e1655830648f212cf82524b32348eb9e90e3035))
+
 ## [0.2.0](https://github.com/doublewordai/bit-harbor/compare/v0.1.0...v0.2.0) (2025-08-13)
 
 
