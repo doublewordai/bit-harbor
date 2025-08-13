@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/doublewordai/bit-harbor/compare/v0.2.1...v0.2.2) (2025-08-13)
+
+
+### Bug Fixes
+
+* only use one container for the pre-porter DaemonSet ([eb67914](https://github.com/doublewordai/bit-harbor/commit/eb679145271d3743b6b145e277f4561eb423f462))
+
 ## [0.2.1](https://github.com/doublewordai/bit-harbor/compare/v0.2.0...v0.2.1) (2025-08-13)
 
 
