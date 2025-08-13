@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/doublewordai/bit-harbor/compare/v0.2.2...v0.2.3) (2025-08-13)
+
+
+### Bug Fixes
+
+* only restart on failure ([1ad5ed8](https://github.com/doublewordai/bit-harbor/commit/1ad5ed8412b7e8a06d8a33f62257b4fffd69ba27))
+
 ## [0.2.2](https://github.com/doublewordai/bit-harbor/compare/v0.2.1...v0.2.2) (2025-08-13)
 
 
