@@ -1,4 +1,4 @@
-# Bit Harbor
+# Bit Harbour
 
 Minimal containers with Hugging Face model weights for Kubernetes init containers.
 
