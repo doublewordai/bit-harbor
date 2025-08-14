@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/doublewordai/bit-harbor/compare/v0.2.3...v1.0.0) (2025-08-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* convert from daemonsets to using kruise advancedcronjobs and broadcastjobs for refreshing images over lifetime of the cluster
+
+### Features
+
+* convert from daemonsets to using kruise advancedcronjobs and broadcastjobs for refreshing images over lifetime of the cluster ([2ff9807](https://github.com/doublewordai/bit-harbor/commit/2ff9807d2d25803b874d02beee3667e2afc51357))
+
 ## [0.2.3](https://github.com/doublewordai/bit-harbor/compare/v0.2.2...v0.2.3) (2025-08-13)
 
 
