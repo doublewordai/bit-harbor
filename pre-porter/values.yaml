@@ -5,19 +5,19 @@
 # Global image registry configuration
 imageRegistry: "ghcr.io/doublewordai/bit-harbor"
 
-# List of model tags to pre-pull. Each entry can have its own DaemonSet configuration.
+# List of model tags to pre-pull. Each entry creates Jobs on matching nodes.
 # The model name becomes the image tag: ghcr.io/doublewordai/bit-harbor:<model-name>
 images: []
   # - name: "gemma-3-4b-it"  # This becomes the image tag
   #   pullPolicy: "Always"
   #   enabled: true
-  #   # Node selector for this specific image
+  #   # Node selector for this specific image (combined with global nodeSelector)
   #   nodeSelector: {}
   #   # Tolerations for this specific image
   #   tolerations: []
-  #   # Affinity for this specific image
+  #   # Affinity for this specific image  
   #   affinity: {}
-  #   # Resources for this specific image's containers
+  #   # Resources for this specific image's Job containers
   #   resources:
   #     limits:
   #       cpu: "100m"
@@ -26,13 +26,14 @@ images: []
   #       cpu: "50m"
   #       memory: "64Mi"
 
-# Global node selector applied to all DaemonSets (unless overridden per image)
+# Global node selector applied to all Jobs (unless overridden per image)
 globalNodeSelector: {}
+  # nvidia.com/gpu: "true"  # Uncomment to target only GPU nodes
 
-# Global tolerations applied to all DaemonSets (unless overridden per image)
+# Global tolerations applied to all Jobs (unless overridden per image)
 globalTolerations: []
 
-# Global affinity applied to all DaemonSets (unless overridden per image)
+# Global affinity applied to all Jobs (unless overridden per image)
 globalAffinity: {}
 
 # Global resource limits and requests (unless overridden per image)
@@ -57,34 +58,69 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# DaemonSet configuration
-daemonSet:
-  # Update strategy for DaemonSets
-  updateStrategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
+# OpenKruise AdvancedCronJob configuration
+advancedCronJob:
+  # Enable AdvancedCronJob to create BroadcastJobs
+  enabled: false
 
-  # Security context for DaemonSet pods
-  securityContext: {}
+  # Standard CronJob schedule expression (e.g., "0 2 * * *" for daily at 2 AM)
+  schedule: "0 2 * * *"
 
-  # Container security context
-  containerSecurityContext: {}
+  # Time zone for the cron schedule
+  timeZone: "UTC"
 
-  # Priority class name for DaemonSet pods
-  priorityClassName: ""
+  # Concurrency policy: Forbid, Allow, or Replace
+  concurrencyPolicy: "Forbid"
 
-  # DNS policy for DaemonSet pods
-  dnsPolicy: ClusterFirst
+  # Number of successful/failed jobs to keep in history
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
 
-  # Host network for DaemonSet pods (set to true if needed for node-level operations)
-  hostNetwork: false
+  # Optional: Pause the AdvancedCronJob
+  suspend: false
 
-  # Restart policy for DaemonSet pods
-  restartPolicy: OnFailure
+  # BroadcastJob template configuration
+  broadcastJobTemplate:
+    # Completion policy for BroadcastJob
+    completionPolicy:
+      type: Always
+      # Optional: Timeout for BroadcastJob execution
+      activeDeadlineSeconds: 3600  # 1 hour
+
+    # TTL for automatic cleanup of completed BroadcastJob pods
+    ttlSecondsAfterFinished: 86400  # 1 day
+
+    # Pod template configuration for BroadcastJob
+    podTemplate:
+      # Security context for pods
+      securityContext: {}
+
+      # Container security context
+      containerSecurityContext: {}
+
+      # Priority class name for pods
+      priorityClassName: ""
+
+      # DNS policy for pods
+      dnsPolicy: ClusterFirst
+
+      # Host network for pods
+      hostNetwork: false
+
+      # Restart policy for pods (Never = run once, no restart)
+      restartPolicy: Never
+
+      # Container command to run (default uses built-in /pause binary)
+      command: ["/pause"]
 
 # Additional labels to apply to all resources
 commonLabels: {}
 
 # Additional annotations to apply to all resources
 commonAnnotations: {}
+
+# OpenKruise dependency configuration
+kruise:
+  # Enable installation of OpenKruise CRDs and controllers
+  # Set to false if OpenKruise is already installed in your cluster
+  enabled: true

@@ -1,0 +1,163 @@
+suite: test AdvancedCronJob functionality
+templates:
+  - advancedcronjob.yaml
+tests:
+  - it: should create AdvancedCronJob when enabled
+    set:
+      advancedCronJob:
+        enabled: true
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: AdvancedCronJob
+      - equal:
+          path: metadata.name
+          value: "RELEASE-NAME-pre-porter-test-image"
+
+  - it: should not create AdvancedCronJob when disabled
+    set:
+      advancedCronJob:
+        enabled: false
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create one AdvancedCronJob per enabled image
+    set:
+      advancedCronJob:
+        enabled: true
+      images:
+        - name: "image1"
+          enabled: true
+        - name: "image2"
+          enabled: false
+        - name: "image3"
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: "RELEASE-NAME-pre-porter-image1"
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: "RELEASE-NAME-pre-porter-image3"
+        documentIndex: 1
+
+  - it: should use BroadcastJob template
+    set:
+      advancedCronJob:
+        enabled: true
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - exists:
+          path: spec.template.broadcastJobTemplate
+
+  - it: should use custom node selector
+    set:
+      advancedCronJob:
+        enabled: true
+      globalNodeSelector:
+        custom/gpu: "v100"
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.broadcastJobTemplate.spec.template.spec.nodeSelector
+          value:
+            custom/gpu: "v100"
+
+  - it: should have correct cron schedule
+    set:
+      advancedCronJob:
+        enabled: true
+        schedule: "0 6 * * *"
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.schedule
+          value: "0 6 * * *"
+
+  - it: should have correct timezone
+    set:
+      advancedCronJob:
+        enabled: true
+        timeZone: "America/New_York"
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.timeZone
+          value: "America/New_York"
+
+  - it: should use service account
+    set:
+      advancedCronJob:
+        enabled: true
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.broadcastJobTemplate.spec.template.spec.serviceAccountName
+          value: "RELEASE-NAME-pre-porter"
+
+  - it: should use correct image
+    set:
+      advancedCronJob:
+        enabled: true
+      imageRegistry: "ghcr.io/doublewordai/bit-harbor"
+      images:
+        - name: "test-model"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.broadcastJobTemplate.spec.template.spec.containers[0].image
+          value: "ghcr.io/doublewordai/bit-harbor:test-model"
+
+  - it: should include cleanup TTL when configured
+    set:
+      advancedCronJob:
+        enabled: true
+        broadcastJobTemplate:
+          ttlSecondsAfterFinished: 3600
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.broadcastJobTemplate.spec.ttlSecondsAfterFinished
+          value: 3600
+
+  - it: should include completion policy when configured
+    set:
+      advancedCronJob:
+        enabled: true
+        broadcastJobTemplate:
+          completionPolicy:
+            type: Always
+            activeDeadlineSeconds: 1800
+      images:
+        - name: "test-image"
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.broadcastJobTemplate.spec.completionPolicy.type
+          value: Always
+      - equal:
+          path: spec.template.broadcastJobTemplate.spec.completionPolicy.activeDeadlineSeconds
+          value: 1800

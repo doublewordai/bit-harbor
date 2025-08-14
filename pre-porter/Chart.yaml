@@ -1,7 +1,7 @@
 apiVersion: v2
 name: pre-porter
 description: A Helm chart for pre-pulling bit-harbor images on Kubernetes nodes
-  using DaemonSets
+  using OpenKruise BroadcastJobs
 type: application
 version: 0.2.3
 appVersion: "1.0.0"
@@ -10,6 +10,12 @@ sources:
   - https://github.com/doublewordai/bit-harbor
 keywords:
   - image-prepull
-  - daemonset
+  - broadcastjob
+  - openkruise
   - bit-harbor
   - model-weights
+dependencies:
+  - name: kruise
+    version: ">=1.0.0"
+    repository: "https://openkruise.github.io/charts/"
+    condition: kruise.enabled

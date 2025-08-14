@@ -1,6 +1,21 @@
 # Pre-Porter Helm Chart
 
-Pre-Porter is a Helm chart that pre-pulls bit-harbor images on Kubernetes nodes using DaemonSets. Each DaemonSet runs the bit-harbor image with the built-in `/pause` binary, causing the container runtime to cache the image locally. This dramatically speeds up ML workload startup times by eliminating image pull time.
+Pre-Porter is a Helm chart that pre-pulls bit-harbor images across Kubernetes nodes using OpenKruise AdvancedCronJobs and BroadcastJobs.
+
+Using OpenKruise AdvancedCronJobs, Pre-Porter automatically creates BroadcastJobs that run on all matching nodes simultaneously. Each BroadcastJob runs the bit-harbor image with the built-in `/pause` binary, which exits after the image is pulled. This dramatically speeds up ML workload startup times by eliminating image pull time when using bit harbor as an init container.
+
+## Prerequisites
+
+**OpenKruise Required**: This chart uses OpenKruise AdvancedCronJob and BroadcastJob resources. You must install OpenKruise in your cluster before using Pre-Porter.
+
+```bash
+# Install OpenKruise 
+helm repo add openkruise https://openkruise.github.io/charts/
+helm install kruise openkruise/kruise --version v1.7.2
+
+# Or let Pre-Porter install it for you (recommended)
+helm install pre-porter ./pre-porter --set kruise.enabled=true
+```
 
 ## Quick Start
 
@@ -31,12 +46,17 @@ images:
     enabled: true
     pullPolicy: "Always"
     
-  - name: "qwen-3-8b"  # Disabled - won't create DaemonSet
+  - name: "qwen-3-8b"  # Disabled - won't create Jobs
     enabled: false
     pullPolicy: "Always"
+
+# Enable AdvancedCronJob to create BroadcastJobs
+advancedCronJob:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM UTC
 ```
 
-It creates a DaemonSet for each enabled image, pulling the specified model from the registry and keeping it cached on each node.
+The AdvancedCronJob will create BroadcastJobs for each enabled image, automatically running on all matching nodes to pull and cache the specified model.
 
 ```bash
 helm install pre-porter ./pre-porter -f values.yaml
@@ -44,19 +64,19 @@ helm install pre-porter ./pre-porter -f values.yaml
 
 ### Advanced Configuration
 
-Target different models to different node types:
+Target different models to different GPU node types:
 
 ```yaml
 imageRegistry: "ghcr.io/doublewordai/bit-harbor"
 
-# Global settings (applied to all images unless overridden)
+# Global settings (applied to all BroadcastJobs unless overridden)  
 globalNodeSelector:
-  kubernetes.io/os: linux
-  
+  nvidia.com/gpu: "true"  # target only GPU nodes
+
+# Global tolerations for GPU nodes
 globalTolerations:
-  - key: "model-nodes"
-    operator: "Equal"
-    value: "true"
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
     effect: "NoSchedule"
 
 globalResources:
@@ -67,38 +87,32 @@ globalResources:
     cpu: "50m"
     memory: "64Mi"
 
+# Enable AdvancedCronJob to create BroadcastJobs
+advancedCronJob:
+  enabled: true
+  schedule: "0 */12 * * *"  # Twice daily
+
 images:
-  # Large GPU models - only on GPU nodes
+  # Large GPU models - targets V100 nodes
   - name: "llama-3.1-8b-instruct"
     enabled: true
     nodeSelector:
       accelerator: "nvidia-tesla-v100"
-      gpu-memory: ">=16Gi"
-    tolerations:
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
     resources:
       limits:
         cpu: "200m"
-        memory: "256Mi"
+        memory: "512Mi"
 
-  # Small CPU models - on CPU-optimized nodes  
+  # Small GPU models - targets any GPU node  
   - name: "gemma-3-4b-it"
     enabled: true
-    nodeSelector:
-      node-type: "cpu-optimized"
-      # gpu selector is NOT inherited from global
-    resources:
-      limits:
-        cpu: "100m"
-        memory: "128Mi"
+    # Uses globalNodeSelector (any GPU node)
 
-  # Embedding models - on all nodes
+  # Embedding models - targets T4 nodes
   - name: "qwen-3-embedding-8b"
     enabled: true
-    # Uses globalNodeSelector and globalTolerations
+    nodeSelector:
+      accelerator: "nvidia-tesla-t4"
 ```
 
 ### Service Account Configuration
@@ -133,56 +147,56 @@ helm upgrade pre-porter ./pre-porter \
   ]'
 ```
 
-### Refresh Images
+### Automatic Cache Refresh
 
-```bash
-# Restart all DaemonSets to re-pull images
-kubectl rollout restart daemonset -l app.kubernetes.io/instance=pre-porter
+Pre-Porter can automatically refresh the image cache on all nodes using AdvancedCronJob:
 
-# Restart specific image DaemonSet
-kubectl rollout restart daemonset pre-porter-gemma-3-4b-it
+```yaml
+# AdvancedCronJob configuration (transparent Kubernetes resource)
+advancedCronJob:
+  enabled: true
+  schedule: "0 2 * * *"  # Standard cron expression - daily at 2 AM UTC
+  timeZone: "UTC"
+  
+  # BroadcastJob template configuration
+  broadcastJobTemplate:
+    # Completion policy for BroadcastJob
+    completionPolicy:
+      type: Always
+      activeDeadlineSeconds: 3600  # 1 hour timeout
+    
+    # TTL for automatic cleanup
+    ttlSecondsAfterFinished: 86400  # 1 day
+  
+  # Optional: Pause the AdvancedCronJob
+  suspend: false
 ```
+
+The AdvancedCronJob will create BroadcastJobs according to the cron schedule, running on all matching nodes to keep the cache hot.
 
 ### Monitor Pre-pulling
 
 ```bash
-# Check DaemonSet status
-kubectl get daemonsets -l app.kubernetes.io/instance=pre-porter
+# Check BroadcastJob status  
+kubectl get broadcastjobs -l app.kubernetes.io/instance=pre-porter
 
-# View model cache container logs  
-kubectl logs -l app.kubernetes.io/instance=pre-porter -c model-cache
+# Check refresh status (AdvancedCronJobs)
+kubectl get advancedcronjobs -l app.kubernetes.io/instance=pre-porter
 
-# Check which nodes have images
+# View completed and running pods from BroadcastJobs
 kubectl get pods -l app.kubernetes.io/instance=pre-porter -o wide
 
-# Monitor specific image
-kubectl get pods -l pre-porter.io/image=gemma-3-4b-it
-```
+# View logs from BroadcastJob pods
+kubectl logs -l app.kubernetes.io/instance=pre-porter -c model-cache
 
-## Architecture
+# Monitor specific image BroadcastJobs
+kubectl get broadcastjobs -l pre-porter.io/image=gemma-3-4b-it
 
-### Why One DaemonSet Per Image?
+# Check BroadcastJob completion status
+kubectl get broadcastjobs -l app.kubernetes.io/instance=pre-porter -o custom-columns='NAME:.metadata.name,DESIRED:.spec.template.spec.completionPolicy.type,SUCCEEDED:.status.succeeded,FAILED:.status.failed'
 
-Pre-Porter creates a separate DaemonSet for each enabled image rather than one DaemonSet for all images.
-
-**Benefits:**
-
-- ✅ **Independent Control**: Different node selectors, tolerations per image
-- ✅ **Independent Lifecycle**: Enable/disable/restart individual images  
-- ✅ **Better Troubleshooting**: Isolated logs and status per image
-- ✅ **Flexible Scheduling**: GPU models on GPU nodes, CPU models on CPU nodes
-- ✅ **Failure Isolation**: One image failure doesn't affect others
-
-**Example:** GPU models can target GPU nodes while CPU models target CPU-optimized nodes:
-
-```yaml
-images:
-  - name: "large-gpu-model"
-    nodeSelector: 
-      accelerator: "nvidia-tesla-v100"
-  - name: "small-cpu-model" 
-    nodeSelector:
-      node-type: "cpu-optimized"
+# View refresh execution history  
+kubectl describe advancedcronjobs -l app.kubernetes.io/instance=pre-porter
 ```
 
 ## Development
@@ -197,7 +211,7 @@ helm plugin install https://github.com/helm-unittest/helm-unittest
 helm unittest .
 
 # Run specific test suite
-helm unittest . -f 'tests/daemonset_test.yaml'
+helm unittest . -f 'tests/job_management_test.yaml'
 ```
 
 ### Linting

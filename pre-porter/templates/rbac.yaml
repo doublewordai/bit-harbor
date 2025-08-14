@@ -1,0 +1,56 @@
+{{- if .Values.advancedCronJob.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "pre-porter.fullname" . }}-broadcastjob
+  labels:
+    {{- include "pre-porter.labels" . | nindent 4 }}
+    app.kubernetes.io/component: advanced-cronjob
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules:
+  # Permissions for BroadcastJob operations
+  - apiGroups: ["apps.kruise.io"]
+    resources: ["broadcastjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps.kruise.io"]
+    resources: ["broadcastjobs/status"]
+    verbs: ["get", "update", "patch"]
+  # Permissions for AdvancedCronJob operations
+  - apiGroups: ["apps.kruise.io"]
+    resources: ["advancedcronjobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps.kruise.io"]
+    resources: ["advancedcronjobs/status"]
+    verbs: ["get", "update", "patch"]
+  # Node access for scheduling
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  # Pod operations
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "pre-porter.fullname" . }}-broadcastjob
+  labels:
+    {{- include "pre-porter.labels" . | nindent 4 }}
+    app.kubernetes.io/component: advanced-cronjob
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "pre-porter.fullname" . }}-broadcastjob
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "pre-porter.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

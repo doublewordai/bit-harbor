@@ -1,0 +1,102 @@
+{{- if .Values.advancedCronJob.enabled }}
+{{- range .Values.images }}
+{{- if .enabled }}
+---
+apiVersion: apps.kruise.io/v1alpha1
+kind: AdvancedCronJob
+metadata:
+  name: {{ include "pre-porter.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "pre-porter.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: advanced-cronjob
+    pre-porter.io/image: {{ .name | quote }}
+  {{- with $.Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ $.Values.advancedCronJob.schedule | quote }}
+  {{- with $.Values.advancedCronJob.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  concurrencyPolicy: {{ $.Values.advancedCronJob.concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ $.Values.advancedCronJob.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ $.Values.advancedCronJob.failedJobsHistoryLimit | default 1 }}
+  {{- with $.Values.advancedCronJob.suspend }}
+  suspend: {{ . }}
+  {{- end }}
+  template:
+    broadcastJobTemplate:
+      spec:
+        template:
+          metadata:
+            labels:
+              {{- include "pre-porter.selectorLabels" $ | nindent 14 }}
+              app.kubernetes.io/component: model-cache
+              pre-porter.io/image: {{ .name | quote }}
+              {{- with $.Values.commonLabels }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- with $.Values.commonAnnotations }}
+            annotations:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          spec:
+            {{- with $.Values.imagePullSecrets }}
+            imagePullSecrets:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            serviceAccountName: {{ include "pre-porter.serviceAccountName" $ }}
+            {{- with ($.Values.advancedCronJob.broadcastJobTemplate.podTemplate.securityContext | default $.Values.globalSecurityContext) }}
+            securityContext:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with (.priorityClassName | default $.Values.advancedCronJob.broadcastJobTemplate.podTemplate.priorityClassName) }}
+            priorityClassName: {{ . }}
+            {{- end }}
+            dnsPolicy: {{ $.Values.advancedCronJob.broadcastJobTemplate.podTemplate.dnsPolicy | default "ClusterFirst" }}
+            hostNetwork: {{ $.Values.advancedCronJob.broadcastJobTemplate.podTemplate.hostNetwork | default false }}
+            restartPolicy: {{ $.Values.advancedCronJob.broadcastJobTemplate.podTemplate.restartPolicy | default "Never" }}
+            containers:
+              - name: model-cache
+                image: "{{ $.Values.imageRegistry }}:{{ .name }}"
+                imagePullPolicy: {{ .pullPolicy | default "IfNotPresent" }}
+                {{- with ($.Values.advancedCronJob.broadcastJobTemplate.podTemplate.containerSecurityContext | default $.Values.globalContainerSecurityContext) }}
+                securityContext:
+                  {{- toYaml . | nindent 18 }}
+                {{- end }}
+                {{- with (.resources | default $.Values.globalResources) }}
+                resources:
+                  {{- toYaml . | nindent 18 }}
+                {{- end }}
+                # Container command (configurable via values.yaml)
+                {{- with $.Values.advancedCronJob.broadcastJobTemplate.podTemplate.command }}
+                command:
+                  {{- toYaml . | nindent 18 }}
+                {{- end }}
+            {{- $nodeSelector := (.nodeSelector | default $.Values.globalNodeSelector) }}
+            {{- if and $nodeSelector (ne (len $nodeSelector) 0) }}
+            nodeSelector:
+              {{- toYaml $nodeSelector | nindent 14 }}
+            {{- end }}
+            {{- $tolerations := (.tolerations | default $.Values.globalTolerations) }}
+            {{- if and $tolerations (ne (len $tolerations) 0) }}
+            tolerations:
+              {{- toYaml $tolerations | nindent 14 }}
+            {{- end }}
+            {{- $affinity := (.affinity | default $.Values.globalAffinity) }}
+            {{- if and $affinity (ne (len $affinity) 0) }}
+            affinity:
+              {{- toYaml $affinity | nindent 14 }}
+            {{- end }}
+        {{- with $.Values.advancedCronJob.broadcastJobTemplate.completionPolicy }}
+        completionPolicy:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        # Cleanup policy for BroadcastJob pods
+        {{- with $.Values.advancedCronJob.broadcastJobTemplate.ttlSecondsAfterFinished }}
+        ttlSecondsAfterFinished: {{ . }}
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,96 @@
+suite: test rbac resources
+templates:
+  - rbac.yaml
+tests:
+  - it: should not create rbac resources when advancedCronJob disabled
+    set:
+      advancedCronJob:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create rbac resources when advancedCronJob enabled
+    set:
+      advancedCronJob:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: ClusterRole
+        documentIndex: 0
+      - isKind:
+          of: ClusterRoleBinding
+        documentIndex: 1
+
+  - it: should have correct BroadcastJob cluster role permissions
+    set:
+      advancedCronJob:
+        enabled: true
+    asserts:
+      # BroadcastJob permissions
+      - equal:
+          path: rules[0].apiGroups[0]
+          value: "apps.kruise.io"
+        documentIndex: 0
+      - contains:
+          path: rules[0].resources
+          content: "broadcastjobs"
+        documentIndex: 0
+      - contains:
+          path: rules[0].verbs
+          content: "create"
+        documentIndex: 0
+      - contains:
+          path: rules[0].verbs
+          content: "delete"
+        documentIndex: 0
+      # AdvancedCronJob permissions
+      - equal:
+          path: rules[2].apiGroups[0]
+          value: "apps.kruise.io"
+        documentIndex: 0
+      - contains:
+          path: rules[2].resources
+          content: "advancedcronjobs"
+        documentIndex: 0
+      - contains:
+          path: rules[2].verbs
+          content: "get"
+        documentIndex: 0
+      # Node permissions
+      - equal:
+          path: rules[4].apiGroups[0]
+          value: ""
+        documentIndex: 0
+      - contains:
+          path: rules[4].resources
+          content: "nodes"
+        documentIndex: 0
+      - contains:
+          path: rules[4].verbs
+          content: "list"
+        documentIndex: 0
+
+  - it: should have correct cluster role binding
+    set:
+      advancedCronJob:
+        enabled: true
+    asserts:
+      - equal:
+          path: roleRef.kind
+          value: "ClusterRole"
+        documentIndex: 1
+      - equal:
+          path: roleRef.name
+          value: "RELEASE-NAME-pre-porter-broadcastjob"
+        documentIndex: 1
+      - equal:
+          path: subjects[0].kind
+          value: "ServiceAccount"
+        documentIndex: 1
+      - equal:
+          path: subjects[0].name
+          value: "RELEASE-NAME-pre-porter"
+        documentIndex: 1
