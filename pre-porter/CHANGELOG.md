@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/doublewordai/bit-harbor/compare/v1.0.0...v1.1.0) (2025-08-15)
+
+
+### Features
+
+* remove kruise dependency and update values.yaml ([f26decc](https://github.com/doublewordai/bit-harbor/commit/f26deccc145abd6a0704cb8193b3504b86e93910))
+
 ## [1.0.0](https://github.com/doublewordai/bit-harbor/compare/v0.2.3...v1.0.0) (2025-08-14)
 
 
