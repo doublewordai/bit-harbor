@@ -118,9 +118,3 @@ commonLabels: {}
 
 # Additional annotations to apply to all resources
 commonAnnotations: {}
-
-# OpenKruise dependency configuration
-kruise:
-  # Enable installation of OpenKruise CRDs and controllers
-  # Set to false if OpenKruise is already installed in your cluster
-  enabled: true

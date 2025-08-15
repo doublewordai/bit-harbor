@@ -57,3 +57,4 @@ models-cache/
 tmp/
 temp/
 *.tmp
+*.tgz

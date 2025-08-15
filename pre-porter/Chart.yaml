@@ -14,8 +14,3 @@ keywords:
   - openkruise
   - bit-harbor
   - model-weights
-dependencies:
-  - name: kruise
-    version: ">=1.0.0"
-    repository: "https://openkruise.github.io/charts/"
-    condition: kruise.enabled
