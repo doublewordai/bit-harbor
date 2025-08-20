@@ -5,7 +5,10 @@
 apiVersion: apps.kruise.io/v1alpha1
 kind: AdvancedCronJob
 metadata:
-  name: {{ include "pre-porter.fullname" $ }}-{{ .name }}
+  {{- $fullname := include "pre-porter.fullname" $ }}
+  {{- $maxLength := sub 63 (add (len $fullname) 1) | int }}
+  {{- $safeName := .name | replace "." "-" | replace "_" "-" | lower | trunc $maxLength | trimSuffix "-" }}
+  name: {{ $fullname }}-{{ $safeName }}
   labels:
     {{- include "pre-porter.labels" $ | nindent 4 }}
     app.kubernetes.io/component: advanced-cronjob
