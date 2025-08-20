@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/doublewordai/bit-harbor/compare/v1.1.0...v1.1.1) (2025-08-20)
+
+
+### Bug Fixes
+
+* template safe name generation for advanced cronjob ([f896711](https://github.com/doublewordai/bit-harbor/commit/f896711fd77351419c125d3503e46abd42ab4954))
+
 ## [1.1.0](https://github.com/doublewordai/bit-harbor/compare/v1.0.0...v1.1.0) (2025-08-15)
 
 
