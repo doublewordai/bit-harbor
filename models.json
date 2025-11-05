@@ -59,6 +59,10 @@
     {
       "name": "numind-nuextract-2.0-8b",
       "repo": "https://huggingface.co/numind/NuExtract-2.0-8B"
+    },
+    {
+      "name": "Qwen/Qwen3-30B-A3B-FP8",
+      "repo": "https://huggingface.co/Qwen/Qwen3-30B-A3B-FP8"
     }
   ]
 }
