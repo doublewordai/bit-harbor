@@ -63,6 +63,10 @@
     {
       "name": "qwen3-30b-a3b-fp8",
       "repo": "https://huggingface.co/Qwen/Qwen3-30B-A3B-FP8"
+    },
+    {
+      "name": "qwen3-vl-30b-a3b-instruct-fp8",
+      "repo": "https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct-FP8"
     }
   ]
 }
