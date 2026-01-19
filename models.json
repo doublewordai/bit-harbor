@@ -67,6 +67,10 @@
     {
       "name": "qwen3-vl-30b-a3b-instruct-fp8",
       "repo": "https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct-FP8"
+    },
+    {
+      "name": "dw-gemma-3-12b-it",
+      "repo": "https://huggingface.co/Doubleword/gemma-3-12b-it"
     }
   ]
 }
